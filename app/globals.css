@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 245, 245, 245;
+  --background-end-rgb: 245, 245, 245;
+  --adm-color-primary: 224 231 255;
+  --safe-padding-top: env(safe-area-inset-top, 0px);
+  --safe-padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  height: 100vh;
+  color: rgb(0, 0, 0);
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+#bottom {
+  position: fixed;
+  bottom: 0px;
+  width: 100vw;
+  background-color: rgb(var(--foreground-rgb));
+  flex-grow: 0;
+  z-index: 10000;
+}
+
+#top {
+  position: fixed;
+  z-index: 100;
+  background-color: rgb(var(--background-start-rgb));
+  top: 0;
+  width: 100vw;
+  height: 6hv;
+}
