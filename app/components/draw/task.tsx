@@ -1,153 +1,128 @@
-import { Button, Card, Image, Toast } from "antd-mobile";
-import dayjs from "dayjs";
-import Cookie from "js-cookie";
+import { action } from "@/app/mj/action";
+import { ListRes, fetchList, fetchListByIds } from "@/app/mj/list";
+import { useSettingStore } from "@/app/store/setting";
+import { Button, Card, Ellipsis, Image, Toast } from "antd-mobile";
 import { useEffect, useState } from "react";
 
-export interface Task {
-  _id?: string;
-  userID: string;
-  createdAt: number;
-  taskID: string;
-  type: "IMAGINE" | "UPSCALE" | "VARIATION" | "REROLL" | "DESCRIBE" | "BLEND";
-  status?: "NOT_START" | "SUBMITTED" | "IN_PROGRESS" | "FAILURE" | "SUCCESS";
-  progress?: string;
-  rawPrompt?: string;
-  targetPrompt?: string;
-  pub?: boolean;
-  seed?: string;
-
-  error?: string;
-  doneAt?: number;
-  rawFinalUrl?: string;
-  finalUrl?: string;
-  buttons?: [{ customId: string; label: string; used?: boolean }];
-  refund?: boolean;
-  credits: number;
-}
-
 export default function Task() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [ts, setTs] = useState<number>(dayjs().unix());
-  const fetchTasks = () => {
-    const request = new Request("https://mapi.aleyi.com/draw/tasks", {
-      method: "GET",
-      headers: {
-        Authorization: Cookie.get("ak") || "",
-      },
-    });
-    fetch(request)
-      .then(async (reponse) => {
-        const body = await reponse.json();
-        setTasks(body.data.tasks);
-      })
-      .catch((err) => {
-        Toast.show("获取失败");
-      });
-  };
+  const [tasks, setTasks] = useState<ListRes[]>([]);
+  // const [ts, setTs] = useState<number>(dayjs().unix());
+  const settingStore = useSettingStore();
   useEffect(() => {
-    fetchTasks();
-  }, [ts]);
+    async function fetchData() {
+      try {
+        const list = await fetchList({
+          baseUrl: settingStore.mjProxyEndpoint,
+          secret: settingStore.mjProxySecret,
+        });
+        setTasks(list);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    fetchData();
+  }, [settingStore.mjProxyEndpoint, settingStore.mjProxySecret]);
+
+  useEffect(() => {
+    const poll = async (requestIds: string[]) => {
+      const list = await fetchListByIds({
+        ids: requestIds,
+        baseUrl: settingStore.mjProxyEndpoint,
+        secret: settingStore.mjProxySecret,
+      });
+      const listCopy = tasks.map((ele) =>
+        JSON.parse(JSON.stringify(ele))
+      ) as ListRes[];
+
+      list.forEach((ele) => {
+        const target = listCopy.findIndex((t) => ele.id === t.id);
+        listCopy[target] = ele;
+      });
+      setTasks(listCopy);
+    };
+    const intervalId = setInterval(() => {
+      console.log("fetch interval");
+
+      const pollIDs = tasks
+        .filter((ele) => ele.status != "SUCCESS" && ele.status != "FAILURE")
+        .map((ele) => ele.id);
+
+      if (pollIDs) {
+        poll(pollIDs);
+      }
+    }, 5000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [tasks]);
+
   return (
     <div className="pb-12">
       {tasks.map((ele, i) => {
-        return <TaskCard setTs={setTs} key={i} task={ele} />;
+        return <TaskCard key={i} task={ele} />;
       })}
     </div>
   );
 }
 
-function TaskCard({
-  task,
-  setTs,
-}: {
-  task: Task;
-  setTs: (ts: number) => void;
-}) {
-  const runAction = (label: string) => {
-    const input = {
-      userID: Cookie.get("userID") || "",
-      action: label.includes("U") ? "UPSCALE" : "VARIATION",
-      taskID: task._id,
-      index: parseInt(label[1], 10),
-    };
-
-    const request = new Request(
-      "https://mapi.aleyi.com/draw/action/" + input.action,
-      {
-        method: "POST",
-        body: JSON.stringify(input),
-        headers: {
-          Authorization: Cookie.get("ak") || "",
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    fetch(request)
-      .then(async (reponse) => {
-        const body = await reponse.json();
-        if (reponse.status != 200) {
-          Toast.show("请求错误");
-        } else if (body.code != 200) {
-          Toast.show(body.message);
-        } else {
-          Toast.show("提交成功");
-          setTs(dayjs().unix());
-        }
-      })
-      .catch((err) => {
-        Toast.show("请求错误");
-      });
+function TaskCard({ task }: { task: ListRes }) {
+  const settingStore = useSettingStore();
+  const runAction = async (label: string) => {
+    await action({
+      taskID: task.id,
+      label: label,
+      baseUrl: settingStore.mjProxyEndpoint,
+      secret: settingStore.mjProxySecret,
+    });
   };
   return (
-    <Card title={task.type}>
+    <Card title={task.action} style={{ marginBottom: "4px" }}>
+      <Ellipsis direction="end" content={task.prompt} />
       <Image
-        src={task.finalUrl}
+        src={task.imageUrl}
         alt={task.progress}
         width={"100%"}
         style={{ height: "auto", aspectRatio: "1 / 1" }}
       />
-      {(task.type === "IMAGINE" || task.type === "VARIATION") && (
-        <Card>
-          <div className="flex flex-row justify-between">
-            {task?.buttons
-              ?.filter((ele) => ele.label.includes("U"))
-              .map((ele, i) => {
+      {(task.action === "IMAGINE" || task.action === "VARIATION") &&
+        task.status === "SUCCESS" && (
+          <Card>
+            <div className="flex flex-row justify-between">
+              {["U1", "U2", "U3", "U4"].map((ele, i) => {
                 return (
                   <Button
                     key={i}
                     className="flex-grow"
-                    disabled={ele.used}
-                    onClick={() => {
-                      runAction(ele.label);
+                    onClick={async () => {
+                      await runAction(ele);
                     }}
                   >
-                    {ele.label}
+                    {ele}
                   </Button>
                 );
               })}
-          </div>
-          <div className="flex flex-row justify-between">
-            {task?.buttons
-              ?.filter((ele) => ele.label.includes("V"))
-              .map((ele, i) => {
+            </div>
+            <div className="flex flex-row justify-between">
+              {["V1", "V2", "V3", "V4"].map((ele, i) => {
                 return (
                   <Button
                     key={i}
                     className="flex-grow"
-                    disabled={ele.used}
-                    onClick={() => {
-                      runAction(ele.label);
+                    onClick={async () => {
+                      await runAction(ele);
                     }}
                   >
-                    {ele.label}
+                    {ele}
                   </Button>
                 );
               })}
-          </div>
-        </Card>
-      )}
+            </div>
+            <div className="flex flex-row justify-between">
+              <Button>{"seed"}</Button>
+            </div>
+          </Card>
+        )}
 
       <div>
         {/* {task.rawPrompt && (

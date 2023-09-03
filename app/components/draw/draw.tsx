@@ -1,13 +1,14 @@
 import { imagine } from "@/app/mj/imagine";
 import { useSettingStore } from "@/app/store/setting";
 import {
-    Button,
-    Divider,
-    Selector,
-    Slider,
-    Tabs,
-    TextArea,
-    Toast
+  Button,
+  Divider,
+  Selector,
+  Slider,
+  Switch,
+  Tabs,
+  TextArea,
+  Toast,
 } from "antd-mobile";
 import { useState } from "react";
 
@@ -38,18 +39,21 @@ function Panel({ model }: { model: string }) {
   const [ratio, setRatio] = useState("1:1");
   const [chaos, setChaos] = useState(0);
   const [stylize, setStylize] = useState(0);
+  const [usePanelParams, setUsePanelParams] = useState(true);
   const settingStore = useSettingStore();
   const submit = async () => {
     const message = await imagine({
       prompt: prompt,
-      params: {
-        ratio: ratio,
-        version: version,
-        quality: qulity,
-        chaos: chaos,
-        stylize: stylize,
-        seed: seed,
-      },
+      params: usePanelParams
+        ? {
+            ratio: ratio,
+            version: version,
+            quality: qulity,
+            chaos: chaos,
+            stylize: stylize,
+            seed: seed,
+          }
+        : {},
       baseUrl: settingStore.mjProxyEndpoint,
       secret: settingStore.mjProxySecret,
     });
@@ -73,8 +77,20 @@ function Panel({ model }: { model: string }) {
         placeholder="输入种子(可选)"
       />
       <Divider />
+      <Switch
+        defaultChecked
+        onChange={(e) => setUsePanelParams(e)}
+        style={{
+          "--checked-color": "#00b578",
+          "--height": "36px",
+          "--width": "60px",
+        }}
+      />
+      {"  启用参数选择器"}
+      <Divider />
       版本
       <Selector
+        disabled={!usePanelParams}
         //  "niji 5" | "niji 4"
         options={
           model === "mj"
@@ -96,6 +112,7 @@ function Panel({ model }: { model: string }) {
       <Divider />
       清晰度
       <Selector
+        disabled={!usePanelParams}
         options={[
           { label: "高清", value: ".25" },
           { label: "超清", value: ".5" },
@@ -110,6 +127,7 @@ function Panel({ model }: { model: string }) {
       <Divider />
       比例
       <Selector
+        disabled={!usePanelParams}
         options={[
           { label: "1:1", value: "1:1" },
           { label: "16:9", value: "16:9" },
@@ -128,6 +146,7 @@ function Panel({ model }: { model: string }) {
       <Divider />
       混乱度
       <Slider
+        disabled={!usePanelParams}
         popover
         min={0}
         step={1}
@@ -140,6 +159,7 @@ function Panel({ model }: { model: string }) {
       <Divider />
       风格化
       <Slider
+        disabled={!usePanelParams}
         popover
         min={0}
         step={10}

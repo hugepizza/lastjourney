@@ -28,23 +28,29 @@ export async function imagine({
   const targetPrompt = await assemble(prompt, params);
   console.log("prompt", prompt);
   console.log("targetPrompt", targetPrompt);
+  console.log("baseUrl", baseUrl);
+  console.log("secret", secret);
 
-  const resp = await axios.post<ImagineRes>(
-    `${baseUrl}/mj/submit/imagine`,
-    {
-      prompt: targetPrompt,
-      base64Array: base64Array,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "x-requested-with": "XMLHttpRequest",
-        "mj-api-secret": secret,
+  try {
+    const resp = await axios.post<ImagineRes>(
+      `${baseUrl}/mj/submit/imagine`,
+      {
+        prompt: targetPrompt,
+        base64Array: base64Array,
       },
-    },
-  );
-  const result = resp.data;
-  return result.description;
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-requested-with": "XMLHttpRequest",
+          "mj-api-secret": secret,
+        },
+      }
+    );
+    const result = resp.data;
+    return result.description;
+  } catch (error) {
+    return "请求错误"
+  }
 }
 
 export async function assemble(
@@ -56,7 +62,7 @@ export async function assemble(
     chaos?: number;
     stylize?: number;
     seed?: string;
-  },
+  }
 ) {
   let target = prompt;
 
