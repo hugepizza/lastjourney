@@ -1,24 +1,30 @@
 "use client";
 import { SafeArea, TabBar } from "antd-mobile";
-import { CalendarOutline, UserOutline } from "antd-mobile-icons";
+import {
+  CalendarOutline,
+  PictureOutline,
+  SetOutline,
+  UnorderedListOutline,
+  UserOutline,
+} from "antd-mobile-icons";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export function TabBarBottom() {
   const tabs = [
     {
       key: "/draw",
-      title: "画图",
-      icon: <CalendarOutline />,
+      title: "draw",
+      icon: <PictureOutline />,
     },
     {
       key: "/task",
-      title: "任务",
-      icon: <CalendarOutline />,
+      title: "task",
+      icon: <UnorderedListOutline />,
     },
     {
       key: "/setting",
-      title: "配置",
-      icon: <UserOutline />,
+      title: "setting",
+      icon: <SetOutline />,
     },
   ];
 

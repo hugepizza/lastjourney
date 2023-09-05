@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { ConfigProvider, SafeArea } from "antd-mobile";
 import { useMemo } from "react";
 import Draw from "./components/draw/draw";
-import Task from "./components/draw/task";
+import Task from "./components/task/task";
 import { BitTop } from "./components/layout/big_top";
 import { TabBarBottom } from "./components/layout/tabbar_bottom";
 import Setting from "./components/setting/setting";

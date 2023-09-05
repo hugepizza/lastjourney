@@ -3,27 +3,27 @@ import { Button, Form, Input, Toast } from "antd-mobile";
 import { useEffect, useState } from "react";
 export default function User() {
   const settingStore = useSettingStore();
-  const [mjProxyEndpoint, setMjProxyEndpoint] = useState("");
+  const [mjProxyBaseUrl, setMjProxyBaseUrl] = useState("");
   const [mjProxySecret, setMjProxySecret] = useState("");
   useEffect(() => {
-    setMjProxyEndpoint(settingStore.mjProxyEndpoint);
+    setMjProxyBaseUrl(settingStore.mjProxyBaseUrl);
     setMjProxySecret(settingStore.mjProxySecret || "");
-  }, [settingStore.mjProxyEndpoint, settingStore.mjProxySecret]);
+  }, [settingStore.mjProxyBaseUrl, settingStore.mjProxySecret]);
   const save = () => {
-    settingStore.updatemjProxyEndpoint(mjProxyEndpoint);
+    settingStore.updatemjProxyBaseUrl(mjProxyBaseUrl);
     settingStore.updatemjProxySecret(mjProxySecret);
-    Toast.show("保存成功");
+    Toast.show("Success");
   };
   return (
     <div className="w-full h-full pb-12">
       <Form>
-        <Form.Item label="mj proxy地址">
+        <Form.Item label="mj proxy BaseUrl">
           <Input
-            value={mjProxyEndpoint}
-            onChange={(e) => setMjProxyEndpoint(e)}
+            value={mjProxyBaseUrl}
+            onChange={(e) => setMjProxyBaseUrl(e)}
           ></Input>
         </Form.Item>
-        <Form.Item label="mj proxy密钥(如果有)">
+        <Form.Item label="mj proxy secret(optional)">
           <Input
             value={mjProxySecret || ""}
             onChange={(e) => setMjProxySecret(e)}
@@ -31,7 +31,7 @@ export default function User() {
         </Form.Item>
 
         <Button type="submit" onClick={save} block>
-          保存
+          Save
         </Button>
       </Form>
     </div>

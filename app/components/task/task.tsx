@@ -3,16 +3,18 @@ import { ListRes, fetchList, fetchListByIds } from "@/app/mj/list";
 import { useSettingStore } from "@/app/store/setting";
 import { Button, Card, Ellipsis, Image, Toast } from "antd-mobile";
 import { useEffect, useState } from "react";
+import Block from "../common/block";
+import dayjs from "dayjs";
 
 export default function Task() {
   const [tasks, setTasks] = useState<ListRes[]>([]);
-  // const [ts, setTs] = useState<number>(dayjs().unix());
+  const [ts, setTs] = useState<number>(0);
   const settingStore = useSettingStore();
   useEffect(() => {
     async function fetchData() {
       try {
         const list = await fetchList({
-          baseUrl: settingStore.mjProxyEndpoint,
+          baseUrl: settingStore.mjProxyBaseUrl,
           secret: settingStore.mjProxySecret,
         });
         setTasks(list);
@@ -22,13 +24,13 @@ export default function Task() {
     }
 
     fetchData();
-  }, [settingStore.mjProxyEndpoint, settingStore.mjProxySecret]);
+  }, [settingStore.mjProxyBaseUrl, settingStore.mjProxySecret, ts]);
 
   useEffect(() => {
     const poll = async (requestIds: string[]) => {
       const list = await fetchListByIds({
         ids: requestIds,
-        baseUrl: settingStore.mjProxyEndpoint,
+        baseUrl: settingStore.mjProxyBaseUrl,
         secret: settingStore.mjProxySecret,
       });
       const listCopy = tasks.map((ele) =>
@@ -55,35 +57,52 @@ export default function Task() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [tasks]);
+  }, [settingStore.mjProxyBaseUrl, settingStore.mjProxySecret, tasks]);
 
   return (
     <div className="pb-12">
       {tasks.map((ele, i) => {
-        return <TaskCard key={i} task={ele} />;
+        return (
+          <TaskCard
+            key={i}
+            task={ele}
+            reload={() => {
+              setTs(dayjs().unix());
+            }}
+          />
+        );
       })}
     </div>
   );
 }
 
-function TaskCard({ task }: { task: ListRes }) {
+function TaskCard({ task, reload }: { task: ListRes; reload: () => void }) {
   const settingStore = useSettingStore();
   const runAction = async (label: string) => {
     await action({
       taskID: task.id,
       label: label,
-      baseUrl: settingStore.mjProxyEndpoint,
+      baseUrl: settingStore.mjProxyBaseUrl,
       secret: settingStore.mjProxySecret,
     });
   };
   return (
     <Card title={task.action} style={{ marginBottom: "4px" }}>
-      <Ellipsis direction="end" content={task.prompt} />
+      <Block title="Promot">
+        <Ellipsis direction="end" content={task.prompt} />
+      </Block>
+
       <Image
         src={task.imageUrl}
         alt={task.progress}
         width={"100%"}
         style={{ height: "auto", aspectRatio: "1 / 1" }}
+        placeholder={
+          <div className="flex w-full h-full justify-center items-center rounded-full ">
+            {task.failReason && task.failReason}
+            {task.progress && task.progress}
+          </div>
+        }
       />
       {(task.action === "IMAGINE" || task.action === "VARIATION") &&
         task.status === "SUCCESS" && (
@@ -96,6 +115,7 @@ function TaskCard({ task }: { task: ListRes }) {
                     className="flex-grow"
                     onClick={async () => {
                       await runAction(ele);
+                      reload();
                     }}
                   >
                     {ele}
@@ -111,6 +131,7 @@ function TaskCard({ task }: { task: ListRes }) {
                     className="flex-grow"
                     onClick={async () => {
                       await runAction(ele);
+                      reload();
                     }}
                   >
                     {ele}

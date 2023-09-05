@@ -4,19 +4,19 @@ import { persist } from "zustand/middleware";
 const key = "Setting";
 
 export interface SettingStore {
-  mjProxyEndpoint: string;
+  mjProxyBaseUrl: string;
   mjProxySecret?: string;
-  updatemjProxyEndpoint: (_: string) => void;
+  updatemjProxyBaseUrl: (_: string) => void;
   updatemjProxySecret: (_: string) => void;
 }
 
 export const useSettingStore = create<SettingStore>()(
   persist(
     (set, get) => ({
-      mjProxyEndpoint: "https://test",
+      mjProxyBaseUrl: "https://test",
       mjProxySecret: undefined,
-      updatemjProxyEndpoint(input: string) {
-        set(() => ({ mjProxyEndpoint: input?.trim() }));
+      updatemjProxyBaseUrl(input: string) {
+        set(() => ({ mjProxyBaseUrl: input?.trim() }));
       },
       updatemjProxySecret(input: string) {
         set(() => ({ mjProxySecret: input?.trim() }));

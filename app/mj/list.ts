@@ -24,6 +24,7 @@ export async function fetchList({
   secret?: string;
 }): Promise<ListRes[]> {
   const resp = await axios.get<ListRes[]>(`${baseUrl}/mj/task/list`, {
+    withCredentials: false,
     headers: {
       "Content-Type": "application/json",
       "mj-api-secret": secret,
@@ -48,6 +49,7 @@ export async function fetchListByIds({
       ids: ids,
     },
     {
+      withCredentials: false,
       headers: {
         "Content-Type": "application/json",
         "mj-api-secret": secret,

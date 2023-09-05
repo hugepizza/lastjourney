@@ -24,7 +24,6 @@ export async function action({
     {
       headers: {
         "Content-Type": "application/json",
-        "x-requested-with": "XMLHttpRequest",
         "mj-api-secret": secret,
       },
     }

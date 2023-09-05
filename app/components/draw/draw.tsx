@@ -3,6 +3,8 @@ import { useSettingStore } from "@/app/store/setting";
 import {
   Button,
   Divider,
+  ImageUploadItem,
+  ImageUploader,
   Selector,
   Slider,
   Switch,
@@ -20,10 +22,10 @@ export default function Draw() {
         defaultActiveKey={"mj"}
         style={{ "--active-line-color": "black" }}
       >
-        <Tabs.Tab title="默认" key="mj">
+        <Tabs.Tab title="Default" key="mj">
           <Panel model={"mj"} />
         </Tabs.Tab>
-        <Tabs.Tab title="niji" key="niji">
+        <Tabs.Tab title="Niji for anime" key="niji">
           <Panel model={"niji"} />
         </Tabs.Tab>
       </Tabs>
@@ -41,9 +43,42 @@ function Panel({ model }: { model: string }) {
   const [stylize, setStylize] = useState(0);
   const [usePanelParams, setUsePanelParams] = useState(true);
   const settingStore = useSettingStore();
+  const [fileList, setFileList] = useState<ImageUploadItem[]>([]);
+  const [b64, setB64] = useState<string[]>([]);
+  const blobToBase64 = async (blob: any) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        resolve(reader.result);
+      };
+
+      reader.onerror = () => {
+        reject(new Error("Error reading blob as base64"));
+      };
+
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const upload = async (file: File) => {
+    const b64content = await blobToBase64(file);
+    return {
+      url: URL.createObjectURL(file),
+      extra: b64content,
+    } as ImageUploadItem;
+  };
+  const fileChange = (items: ImageUploadItem[]) => {
+    setFileList(items);
+    const b64contentArr = items.map((ele) => {
+      return ele.extra;
+    });
+    setB64(b64contentArr);
+  };
   const submit = async () => {
     const message = await imagine({
       prompt: prompt,
+      base64Array: b64,
       params: usePanelParams
         ? {
             ratio: ratio,
@@ -54,7 +89,7 @@ function Panel({ model }: { model: string }) {
             seed: seed,
           }
         : {},
-      baseUrl: settingStore.mjProxyEndpoint,
+      baseUrl: settingStore.mjProxyBaseUrl,
       secret: settingStore.mjProxySecret,
     });
     Toast.show(message);
@@ -66,7 +101,7 @@ function Panel({ model }: { model: string }) {
         onChange={(e) => {
           setPrompt(e);
         }}
-        placeholder="输入提示词"
+        placeholder="Prompt"
       />
       <Divider />
       <TextArea
@@ -74,7 +109,14 @@ function Panel({ model }: { model: string }) {
         onChange={(e) => {
           setSeed(e);
         }}
-        placeholder="输入种子(可选)"
+        placeholder="Seed(optional)"
+      />
+      <Divider />
+      <ImageUploader
+        maxCount={2}
+        value={fileList}
+        onChange={fileChange}
+        upload={upload}
       />
       <Divider />
       <Switch
@@ -86,9 +128,9 @@ function Panel({ model }: { model: string }) {
           "--width": "60px",
         }}
       />
-      {"  启用参数选择器"}
+      {"  Use Params Selectors"}
       <Divider />
-      版本
+      Version
       <Selector
         disabled={!usePanelParams}
         //  "niji 5" | "niji 4"
@@ -110,13 +152,13 @@ function Panel({ model }: { model: string }) {
         onChange={(arr, extend) => setVersion(arr[0])}
       />
       <Divider />
-      清晰度
+      Quality
       <Selector
         disabled={!usePanelParams}
         options={[
-          { label: "高清", value: ".25" },
-          { label: "超清", value: ".5" },
-          { label: "超高清", value: "1" },
+          { label: "Low", value: ".25" },
+          { label: "Mid", value: ".5" },
+          { label: "High", value: "1" },
         ]}
         defaultValue={[".25"]}
         multiple={false}
@@ -125,7 +167,7 @@ function Panel({ model }: { model: string }) {
         }}
       />
       <Divider />
-      比例
+      Ratio
       <Selector
         disabled={!usePanelParams}
         options={[
@@ -144,7 +186,7 @@ function Panel({ model }: { model: string }) {
         }}
       />
       <Divider />
-      混乱度
+      Chaos
       <Slider
         disabled={!usePanelParams}
         popover
@@ -157,7 +199,7 @@ function Panel({ model }: { model: string }) {
         }}
       />
       <Divider />
-      风格化
+      Stylize
       <Slider
         disabled={!usePanelParams}
         popover
@@ -176,7 +218,7 @@ function Panel({ model }: { model: string }) {
         }}
         block
       >
-        提交
+        Submit
       </Button>
     </div>
   );

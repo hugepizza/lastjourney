@@ -30,26 +30,28 @@ export async function imagine({
   console.log("targetPrompt", targetPrompt);
   console.log("baseUrl", baseUrl);
   console.log("secret", secret);
-
+  const url = `${baseUrl}/mj/submit/imagine`;
   try {
     const resp = await axios.post<ImagineRes>(
-      `${baseUrl}/mj/submit/imagine`,
+      url,
       {
         prompt: targetPrompt,
         base64Array: base64Array,
       },
       {
+        withCredentials: false,
         headers: {
-          "Content-Type": "application/json",
-          "x-requested-with": "XMLHttpRequest",
           "mj-api-secret": secret,
+          "Content-Type": "application/json",
         },
       }
     );
     const result = resp.data;
     return result.description;
   } catch (error) {
-    return "请求错误"
+    console.log("request proxy failed ", error);
+
+    return "request proxy failed";
   }
 }
 
